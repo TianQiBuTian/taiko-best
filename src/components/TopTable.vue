@@ -30,8 +30,8 @@ const saveAsImage = async () => {
       backgroundColor: '#ffffff',
       scale: 2,
       useCORS: true,
-      ignoreElements: (el) => el.classList.contains('no-capture')
-    })
+      ignoreElements: (el: Element) => el.classList.contains('no-capture')
+    } as any)
     
     const link = document.createElement('a')
     link.download = `taiko-best-${props.title}.png`
