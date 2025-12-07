@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import html2canvas from 'html2canvas'
 import type { SongStats } from '../types'
 import { 
   parsePastedScores, 
@@ -26,6 +27,9 @@ const radarData = ref({
   complex: 0
 })
 const copySuccess = ref(false)
+const overviewRef = ref<HTMLElement | null>(null)
+const fullReportRef = ref<HTMLElement | null>(null)
+const isSaving = ref(false)
 
 onMounted(async () => {
   try {
@@ -101,6 +105,28 @@ const topLists = computed(() => ({
   complex: [...results.value].sort((a, b) => b.complex - a.complex).slice(0, 20)
 }))
 
+async function saveElementAsImage(element: HTMLElement | null, fileName: string) {
+  if (!element || isSaving.value) return
+  isSaving.value = true
+  try {
+    const canvas = await html2canvas(element, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      useCORS: true,
+      ignoreElements: (el) => el.classList.contains('no-capture')
+    })
+    const link = document.createElement('a')
+    link.download = `${fileName}.png`
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+  } catch (e) {
+    console.error(e)
+    alert('保存失败')
+  } finally {
+    isSaving.value = false
+  }
+}
+
 async function copyDataToClipboard() {
   try {
     const scoreData = localStorage.getItem('taikoScoreData') || ''
@@ -122,21 +148,28 @@ async function copyDataToClipboard() {
 </script>
 
 <template>
-  <div class="container">
+  <div class="container" ref="fullReportRef">
     <div v-if="notice" class="notice">{{ notice }}</div>
     
     <template v-else>
-      <h1>玩家 Rating 及六维雷达图</h1>
-      
-      <div class="summary">
-        <div class="stat-box">
-          <div class="stat-value">{{ overallRating.toFixed(2) }}</div>
-          <div class="stat-label">Rating</div>
+      <div class="overview-section" ref="overviewRef">
+        <div class="section-header">
+          <h1>玩家 Rating 及六维雷达图</h1>
+          <button class="save-btn no-capture" @click="saveElementAsImage(overviewRef, 'taiko-overview')">
+            保存概览
+          </button>
         </div>
-      </div>
+        
+        <div class="summary">
+          <div class="stat-box">
+            <div class="stat-value">{{ overallRating.toFixed(2) }}</div>
+            <div class="stat-label">Rating</div>
+          </div>
+        </div>
 
-      <div class="chart-container">
-        <RadarChart :data="radarData" />
+        <div class="chart-container">
+          <RadarChart :data="radarData" />
+        </div>
       </div>
 
       <TopTable title="Rating Top 20" :data="topLists.rating" valueKey="rating" />
@@ -147,7 +180,10 @@ async function copyDataToClipboard() {
       <TopTable title="节奏处理 Top 20" :data="topLists.rhythm" valueKey="rhythm" />
       <TopTable title="复合处理 Top 20" :data="topLists.complex" valueKey="complex" />
 
-      <div class="button-group">
+      <div class="button-group no-capture">
+        <button @click="saveElementAsImage(fullReportRef, 'taiko-full-report')" class="action-btn save-full-btn">
+          保存完整报告
+        </button>
         <button @click="copyDataToClipboard" class="copy-btn" :class="{ success: copySuccess }">
           {{ copySuccess ? '✓ 已复制' : '复制数据' }}
         </button>
@@ -167,9 +203,44 @@ async function copyDataToClipboard() {
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
+.overview-section {
+  position: relative;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+}
+
+.section-header {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.save-btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 6px 12px;
+  background-color: #e91e63;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.save-btn:hover {
+  background-color: #c2185b;
+}
+
 h1 {
   text-align: center;
   color: #333;
+  margin: 0;
 }
 
 .notice {
@@ -218,16 +289,26 @@ h1 {
   margin-top: 20px;
 }
 
-.copy-btn {
+.action-btn, .copy-btn, .back-btn {
   flex: 1;
   padding: 12px;
-  background: #e91e63;
-  color: white;
   border: none;
   border-radius: 4px;
   font-size: 16px;
   cursor: pointer;
   transition: all 0.3s;
+  color: white;
+}
+
+.save-full-btn {
+  background: #2196f3;
+}
+.save-full-btn:hover {
+  background: #1976d2;
+}
+
+.copy-btn {
+  background: #e91e63;
 }
 
 .copy-btn:hover {
@@ -239,15 +320,7 @@ h1 {
 }
 
 .back-btn {
-  flex: 1;
-  padding: 12px;
   background: #666;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background 0.3s;
 }
 
 .back-btn:hover {
