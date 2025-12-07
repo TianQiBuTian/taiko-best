@@ -25,6 +25,7 @@ const radarData = ref({
   rhythm: 0,
   complex: 0
 })
+const copySuccess = ref(false)
 
 onMounted(async () => {
   try {
@@ -99,6 +100,25 @@ const topLists = computed(() => ({
   rhythm: [...results.value].sort((a, b) => b.rhythm - a.rhythm).slice(0, 20),
   complex: [...results.value].sort((a, b) => b.complex - a.complex).slice(0, 20)
 }))
+
+async function copyDataToClipboard() {
+  try {
+    const scoreData = localStorage.getItem('taikoScoreData') || ''
+    if (!scoreData) {
+      alert('没有可复制的数据')
+      return
+    }
+    
+    await navigator.clipboard.writeText(scoreData)
+    copySuccess.value = true
+    setTimeout(() => {
+      copySuccess.value = false
+    }, 2000)
+  } catch (err) {
+    console.error('复制失败:', err)
+    alert('复制失败，请手动复制数据')
+  }
+}
 </script>
 
 <template>
@@ -127,7 +147,12 @@ const topLists = computed(() => ({
       <TopTable title="节奏处理 Top 20" :data="topLists.rhythm" valueKey="rhythm" />
       <TopTable title="复合处理 Top 20" :data="topLists.complex" valueKey="complex" />
 
-      <button @click="router.push('/')" class="back-btn">返回</button>
+      <div class="button-group">
+        <button @click="copyDataToClipboard" class="copy-btn" :class="{ success: copySuccess }">
+          {{ copySuccess ? '✓ 已复制' : '复制数据' }}
+        </button>
+        <button @click="router.push('/')" class="back-btn">返回</button>
+      </div>
     </template>
   </div>
 </template>
@@ -187,8 +212,34 @@ h1 {
   margin-bottom: 40px;
 }
 
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.copy-btn {
+  flex: 1;
+  padding: 12px;
+  background: #e91e63;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.copy-btn:hover {
+  background: #c2185b;
+}
+
+.copy-btn.success {
+  background: #4caf50;
+}
+
 .back-btn {
-  width: 100%;
+  flex: 1;
   padding: 12px;
   background: #666;
   color: white;
@@ -196,7 +247,6 @@ h1 {
   border-radius: 4px;
   font-size: 16px;
   cursor: pointer;
-  margin-top: 20px;
   transition: background 0.3s;
 }
 
