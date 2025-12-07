@@ -4,6 +4,11 @@ declare module '*.vue' {
   export default component
 }
 
+declare module '*.css' {
+  const content: string
+  export default content
+}
+
 declare module 'chartjs-plugin-datalabels' {
   import { Plugin } from 'chart.js'
   const plugin: Plugin

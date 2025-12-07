@@ -1,9 +1,10 @@
 <script setup lang="ts">
-// 使用Vue Router进行页面导航
+import NavigationBar from './components/NavigationBar.vue'
 </script>
 
 <template>
   <div id="app">
+    <NavigationBar />
     <router-view />
   </div>
 </template>
