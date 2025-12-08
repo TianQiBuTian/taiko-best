@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { loadSongsData } from '../data/songs'
 import { parsePastedScores, calculateSongStats } from '../utils/calculator'
 import type { UserScore, SongStats } from '../types'
@@ -40,14 +40,24 @@ const filterNotAP = ref(true)
 watch(filterAP, (v) => { if (v) { filterFC.value = true; filterCleared.value = true; filterPlayed.value = true } })
 watch(filterFC, (v) => { 
   if (v) { filterCleared.value = true; filterPlayed.value = true }
-  else { filterAP.value = false }
+  else { 
+    if (filterNotFC.value) filterAP.value = false 
+  }
 })
 watch(filterCleared, (v) => { 
   if (v) { filterPlayed.value = true }
-  else { filterFC.value = false; filterAP.value = false }
+  else { 
+    if (filterNotCleared.value) {
+      filterFC.value = false; filterAP.value = false 
+    }
+  }
 })
 watch(filterPlayed, (v) => { 
-  if (!v) { filterCleared.value = false; filterFC.value = false; filterAP.value = false }
+  if (!v) { 
+    if (filterNotPlayed.value) {
+      filterCleared.value = false; filterFC.value = false; filterAP.value = false 
+    }
+  }
 })
 
 // Negative Side (No)
@@ -56,14 +66,58 @@ watch(filterNotPlayed, (v) => {
 })
 watch(filterNotCleared, (v) => {
   if (v) { filterNotFC.value = true; filterNotAP.value = true }
-  else { filterNotPlayed.value = false }
+  else { 
+    if (filterCleared.value) filterNotPlayed.value = false 
+  }
 })
 watch(filterNotFC, (v) => {
   if (v) { filterNotAP.value = true }
-  else { filterNotCleared.value = false; filterNotPlayed.value = false }
+  else { 
+    if (filterFC.value) {
+      filterNotCleared.value = false; filterNotPlayed.value = false 
+    }
+  }
 })
 watch(filterNotAP, (v) => {
-  if (!v) { filterNotFC.value = false; filterNotCleared.value = false; filterNotPlayed.value = false }
+  if (!v) { 
+    if (filterAP.value) {
+      filterNotFC.value = false; filterNotCleared.value = false; filterNotPlayed.value = false 
+    }
+  }
+})
+
+// Auto-select both if both are unchecked
+watch([filterPlayed, filterNotPlayed], ([v1, v2]) => {
+  if (!v1 && !v2) {
+    nextTick(() => {
+      filterPlayed.value = true
+      filterNotPlayed.value = true
+    })
+  }
+})
+watch([filterCleared, filterNotCleared], ([v1, v2]) => {
+  if (!v1 && !v2) {
+    nextTick(() => {
+      filterCleared.value = true
+      filterNotCleared.value = true
+    })
+  }
+})
+watch([filterFC, filterNotFC], ([v1, v2]) => {
+  if (!v1 && !v2) {
+    nextTick(() => {
+      filterFC.value = true
+      filterNotFC.value = true
+    })
+  }
+})
+watch([filterAP, filterNotAP], ([v1, v2]) => {
+  if (!v1 && !v2) {
+    nextTick(() => {
+      filterAP.value = true
+      filterNotAP.value = true
+    })
+  }
 })
 
 // Slider Logic
