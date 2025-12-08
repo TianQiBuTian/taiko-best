@@ -13,7 +13,7 @@ interface SongRow {
   stats?: SongStats
 }
 
-type SortKey = 'title' | 'constant' | 'score' | 'rating' | 'great' | 'good' | 'bad' | 'drumroll' | 'combo'
+type SortKey = 'title' | 'constant' | 'score' | 'rating' | 'great' | 'good' | 'bad' | 'drumroll' | 'combo' | 'updatedAt'
 
 const songs = ref<SongRow[]>([])
 const loading = ref(true)
@@ -295,6 +295,13 @@ const filteredSongs = computed(() => {
         valA = a.userScore?.combo ?? -1
         valB = b.userScore?.combo ?? -1
         break
+      case 'updatedAt':
+        // 使用时间戳进行排序，没有记录的排在最后
+        const timeA = a.userScore?.updatedAt ? new Date(a.userScore.updatedAt).getTime() : 0
+        const timeB = b.userScore?.updatedAt ? new Date(b.userScore.updatedAt).getTime() : 0
+        valA = timeA
+        valB = timeB
+        break
     }
     
     if (valA === valB) return 0
@@ -405,6 +412,9 @@ const filteredSongs = computed(() => {
             <th @click="toggleSort('combo')" class="sortable">
               连击 <span v-if="sortKey === 'combo'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
             </th>
+            <th @click="toggleSort('updatedAt')" class="sortable">
+              上次游玩 <span v-if="sortKey === 'updatedAt'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -425,6 +435,7 @@ const filteredSongs = computed(() => {
             <td>{{ song.userScore?.bad ?? '-' }}</td>
             <td>{{ song.userScore?.drumroll ?? '-' }}</td>
             <td>{{ song.userScore?.combo ?? '-' }}</td>
+            <td>{{ song.userScore?.updatedAt ? new Date(song.userScore.updatedAt).toLocaleDateString('zh-CN') : '-' }}</td>
           </tr>
         </tbody>
       </table>
