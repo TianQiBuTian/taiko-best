@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc && vite build",
+    "build": "vue-tsc && vite build && node minify-songs.mjs",
     "preview": "vite preview",
     "type-check": "vue-tsc --noEmit",
     "extract-songs": "node extract-songs.mjs"
