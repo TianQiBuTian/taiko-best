@@ -14,9 +14,11 @@ export interface SongData {
 export interface UserScore {
   id: number
   level: number
+  score: number
   great: number
   good: number
   bad: number
+  drumroll: number
   combo: number
   updatedAt: string
 }

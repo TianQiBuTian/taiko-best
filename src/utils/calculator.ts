@@ -212,9 +212,11 @@ export function calculateSongStats(songData: SongData, userScore: UserScore): So
  * 数据映射：
  * - r[0] → id: 曲目ID
  * - r[1] → level: 难度等级
+ * - r[2] → score: 总分数
  * - r[4] → great: 良(good)判定数
- * - r[5] → good: 可(ok)判定数（这里命名有些混淆）
+ * - r[5] → good: 可(ok)判定数
  * - r[6] → bad: 不可(bad)判定数
+ * - r[7] → drumroll: 连打判定数
  * - r[8] → combo: 最大连击数
  * - r[13] → updatedAt: 更新时间
  */
@@ -225,9 +227,11 @@ export function parsePastedScores(raw: string | any[]): UserScore[] {
   return arr.map(r => ({
     id: Number(r[0]),
     level: Number(r[1]),
+    score: Number(r[2]) || 0,
     great: Number(r[4]) || 0,
     good: Number(r[5]) || 0,
     bad: Number(r[6]) || 0,
+    drumroll: Number(r[7]) || 0,
     combo: Number(r[8]) || 0,
     updatedAt: r[13]
   }))
