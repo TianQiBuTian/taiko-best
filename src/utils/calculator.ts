@@ -82,7 +82,6 @@ export function calcW(x: number, y: number): number {
 export function calcSingleRating(x: number, y: number): number {
   const p = calcP(x, y)
   const w = calcW(x, y)
-  console.log(p, w)
   return POWER(w * POWER(x, p) + (1 - w) * POWER(y, p), 1 / p)
 }
 
