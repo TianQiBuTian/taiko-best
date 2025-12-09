@@ -377,10 +377,6 @@ const filteredSongs = computed(() => {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
 }
 
 .header {
@@ -527,7 +523,6 @@ const filteredSongs = computed(() => {
   overflow-x: auto;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   border-radius: 8px;
-  height: 100%;
 }
 
 table {
