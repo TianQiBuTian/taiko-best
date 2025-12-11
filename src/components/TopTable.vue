@@ -1,13 +1,20 @@
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
 import type { SongStats } from '../types'
+import { recommendSongs, setSongsDatabase } from '../utils/recommend'
+import { parsePastedScores, calculateSongStats } from '../utils/calculator'
+import { loadSongsData } from '../data/songs'
 
 interface Props {
   title: string
   data: SongStats[]
   valueKey: keyof SongStats
+  showMode?: 'top20' | 'recommend'
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  showMode: 'top20'
+})
 
 const formatValue = (item: SongStats, key: keyof SongStats): string => {
   const value = item[key]
@@ -16,15 +23,51 @@ const formatValue = (item: SongStats, key: keyof SongStats): string => {
   }
   return String(value)
 }
+
+// 仿照 SongsView 组件，合成全曲 SongStats
+const allStats = ref<SongStats[]>([])
+
+onMounted(async () => {
+  try {
+    const songsDB = await loadSongsData()
+    // 设置推荐算法使用的歌曲数据库
+    setSongsDatabase(songsDB)
+    
+    const scoreInput = localStorage.getItem('taikoScoreData') || ''
+    const userScores = scoreInput ? parsePastedScores(scoreInput) : []
+    const scoreMap = new Map<string, any>()
+    userScores.forEach(s => {
+      scoreMap.set(`${s.id}-${s.level}`, s)
+    })
+    const result: SongStats[] = []
+    for (const [key, data] of Object.entries(songsDB)) {
+      const score = scoreMap.get(key)
+      if (score) {
+        const stats = calculateSongStats(data, score)
+        if (stats) result.push(stats)
+      }
+    }
+    allStats.value = result
+  } catch (e) {
+    allStats.value = []
+  }
+})
+
+// 推荐列表，取前10首，基于全曲数据
+const recommendedSongs = computed(() => {
+  return recommendSongs(allStats.value.length ? allStats.value : props.data, props.valueKey)
+})
 </script>
 
 <template>
-  <div class="table-section">
-    <div class="section-header">
+  <div class="bg-white mt-0 p-2.5 rounded-lg">
+    <div class="flex justify-center items-center mb-5">
       <h2>{{ title }}</h2>
     </div>
-    <div class="table-responsive">
-      <table>
+    
+    <!-- Top 20 表格 -->
+    <div v-if="showMode === 'top20'" class="overflow-x-auto">
+      <table class="w-full text-sm border-collapse">
         <thead>
           <tr>
             <th>排名</th>
@@ -47,57 +90,53 @@ const formatValue = (item: SongStats, key: keyof SongStats): string => {
         </tbody>
       </table>
     </div>
+    
+    <!-- 推荐歌曲列表 -->
+    <div v-else-if="showMode === 'recommend'" class="mt-8 text-left">
+      <h3 class="mb-2.5 text-primary text-base">推荐游玩的歌曲</h3>
+      <!-- 基准值信息 -->
+      <div v-if="recommendedSongs.length > 0" class="flex gap-6 bg-[#f9f9f9] mb-3 px-3 py-2 border-primary border-l-[3px] rounded">
+        <span class="text-gray-600 text-sm">
+          <strong class="mr-1 text-gray-800">难度基准值：</strong>{{ (recommendedSongs[0] as any)._best20IndicatorMedian?.toFixed(2) || '-' }}
+        </span>
+        <span class="text-gray-600 text-sm">
+          <strong class="mr-1 text-gray-800">评分基准值：</strong>{{ (recommendedSongs[0] as any)._scoreBaseline?.toFixed(2) || '-' }}
+        </span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr>
+              <th>曲名</th>
+              <th>歌曲难度指标</th>
+              <th>难度偏差</th>
+              <th>用户评分</th>
+              <th>评分偏差</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="song in recommendedSongs" :key="song.title">
+              <td class="font-bold text-[#333] text-left">{{ song.title }}</td>
+              <td>{{ (song as any)._songIndicatorValue?.toFixed(2) || '-' }}</td>
+              <td :class="{'text-[#4caf50] font-semibold': (song as any)._songIndicatorValue < (song as any)._best20IndicatorMedian, 'text-[#ff9800] font-semibold': (song as any)._songIndicatorValue >= (song as any)._best20IndicatorMedian}">
+                {{ ((song as any)._songIndicatorValue - (song as any)._best20IndicatorMedian)?.toFixed(2) || '-' }}
+              </td>
+              <td>{{ formatValue(song, valueKey) }}</td>
+              <td :class="{'text-[#4caf50] font-semibold': ((song as any)._userScoreValue - (song as any)._scoreBaseline) < 0, 'text-[#ff9800] font-semibold': ((song as any)._userScoreValue - (song as any)._scoreBaseline) >= 0}">
+                {{ ((song as any)._userScoreValue - (song as any)._scoreBaseline)?.toFixed(2) || '-' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.table-section {
-  margin-top: 0;
-  background: white;
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.table-responsive {
-  overflow-x: auto;
-}
-
-.section-header {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.save-btn {
-  padding: 6px 12px;
-  background-color: #e91e63;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s;
-}
-
-.save-btn:hover {
-  background-color: #c2185b;
-}
-
-.save-btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
 h2 {
   color: #333;
   margin: 0;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
 }
 
 th, td {
@@ -111,7 +150,7 @@ th {
   color: white;
 }
 
-tr:nth-child(even) {
+table tbody tr:nth-child(even) {
   background-color: #f2f2f2;
 }
 </style>
