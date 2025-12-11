@@ -9,9 +9,12 @@ interface Props {
   title: string
   data: SongStats[]
   valueKey: keyof SongStats
+  showMode?: 'top20' | 'recommend'
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  showMode: 'top20'
+})
 
 const formatValue = (item: SongStats, key: keyof SongStats): string => {
   const value = item[key]
@@ -61,7 +64,9 @@ const recommendedSongs = computed(() => {
     <div class="section-header">
       <h2>{{ title }}</h2>
     </div>
-    <div class="table-responsive">
+    
+    <!-- Top 20 表格 -->
+    <div v-if="showMode === 'top20'" class="table-responsive">
       <table>
         <thead>
           <tr>
@@ -85,8 +90,9 @@ const recommendedSongs = computed(() => {
         </tbody>
       </table>
     </div>
+    
     <!-- 推荐歌曲列表 -->
-    <div class="recommend-section">
+    <div v-else-if="showMode === 'recommend'" class="recommend-section">
       <h3>推荐游玩的歌曲</h3>
       <!-- 基准值信息 -->
       <div v-if="recommendedSongs.length > 0" class="baseline-info">

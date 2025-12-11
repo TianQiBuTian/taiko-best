@@ -31,6 +31,7 @@ const contentRef = ref<HTMLElement | null>(null)
 const isSaving = ref(false)
 
 const activeSection = ref('overview')
+const activeSubTab = ref<'top20' | 'recommend'>('top20')
 
 const menuItems = [
   { id: 'overview', label: '概览' },
@@ -144,7 +145,8 @@ const currentTableData = computed(() => {
   return {
     title: item.label,
     data: topLists.value[activeSection.value as keyof typeof topLists.value],
-    valueKey: activeSection.value as keyof SongStats
+    valueKey: activeSection.value as keyof SongStats,
+    showMode: activeSubTab.value
   }
 })
 
@@ -214,10 +216,29 @@ async function saveElementAsImage(element: HTMLElement | null, fileName: string)
 
           <!-- Top Tables -->
           <div v-else-if="currentTableData" class="table-section">
+            <!-- Sub Tabs -->
+            <div class="sub-tabs">
+              <div 
+                class="sub-tab-item"
+                :class="{ active: activeSubTab === 'top20' }"
+                @click="activeSubTab = 'top20'"
+              >
+                Top 20
+              </div>
+              <div 
+                class="sub-tab-item"
+                :class="{ active: activeSubTab === 'recommend' }"
+                @click="activeSubTab = 'recommend'"
+              >
+                推荐曲目
+              </div>
+            </div>
+            
             <TopTable 
               :title="currentTableData.title" 
               :data="currentTableData.data" 
-              :valueKey="currentTableData.valueKey" 
+              :valueKey="currentTableData.valueKey"
+              :showMode="currentTableData.showMode"
             />
           </div>
         </div>
@@ -281,6 +302,32 @@ async function saveElementAsImage(element: HTMLElement | null, fileName: string)
   flex: 1;
   padding-left: 10px;
   position: relative;
+}
+
+.sub-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #eee;
+}
+
+.sub-tab-item {
+  padding: 10px 20px;
+  cursor: pointer;
+  color: #666;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+
+.sub-tab-item:hover {
+  color: #e91e63;
+}
+
+.sub-tab-item.active {
+  color: #e91e63;
+  border-bottom-color: #e91e63;
 }
 
 .overview-section {
