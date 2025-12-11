@@ -52,11 +52,15 @@ onMounted(async () => {
     // 从 localStorage 读取数据
     const scoreInput = localStorage.getItem('taikoScoreData') || ''
     if (!scoreInput) {
-      notice.value = '未找到数据,请先在首页输入数据'
+      notice.value = '未找到数据, 请先在首页输入数据'
       return
     }
     
     const songsDB = await loadSongsData()
+    if (Object.keys(songsDB).length === 0) {
+      notice.value = '歌曲数据加载失败, 请检查网络连接后刷新页面'
+      return
+    }
     const scores = parsePastedScores(scoreInput)
     const tempResults: SongStats[] = []
     
@@ -81,7 +85,7 @@ onMounted(async () => {
     }
   } catch (e) {
     console.error(e)
-    notice.value = '数据加载失败,请检查输入格式'
+    notice.value = '成绩数据计算失败, 请检查输入格式'
   }
 })
 
