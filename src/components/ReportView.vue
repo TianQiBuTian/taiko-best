@@ -81,7 +81,7 @@ onMounted(async () => {
     calculateOverallStats(filteredResults)
     
     if (tempResults.length === 0) {
-      notice.value = '未获取到成绩数据或无法计算'
+      notice.value = '未获取到成绩数据或无法计算, 可能是没有魔王难度、里魔王难度成绩'
     } else {
       notice.value = ''
     }
