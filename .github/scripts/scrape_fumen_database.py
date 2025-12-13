@@ -282,7 +282,12 @@ def convert_to_new_format(old_data):
             continue
 
         # 提取 title 和其他数据
-        title = song_data.pop("title", "")
+        title = (
+            song_data.pop("title", "")
+            .replace(" （おに裏）", "")
+            .replace(" （おに）", "")
+            .strip()
+        )
 
         # 如果这个 id 还没有记录，创建新条目
         if song_id not in songs_map:
