@@ -12,6 +12,7 @@ import {
   filterDuplicateSongs
 } from '../utils/calculator'
 import { loadSongsData } from '../data/songs'
+import { expandSongsDatabase } from '../utils/songHelpers'
 import RadarChart from './RadarChart.vue'
 import TopTable from './TopTable.vue'
 import duplicateSongs from '../data/duplicateSongs'
@@ -59,19 +60,27 @@ onMounted(async () => {
     }
     
     const songsDB = await loadSongsData()
-    if (Object.keys(songsDB).length === 0) {
+    if (songsDB.length === 0) {
       notice.value = '歌曲数据加载失败, 请检查网络连接后刷新页面'
       return
     }
     const scores = parsePastedScores(scoreInput)
     const tempResults: SongStats[] = []
     
+    // 展开数据库并创建映射
+    const expandedEntries = expandSongsDatabase(songsDB)
+    const entryMap = new Map()
+    expandedEntries.forEach(entry => {
+      const key = `${entry.id}-${entry.level}`
+      entryMap.set(key, entry)
+    })
+    
     scores.forEach(s => {
       const key = `${s.id}-${s.level}`
-      const songData = songsDB[key]
-      if (!songData) return
+      const entry = entryMap.get(key)
+      if (!entry) return
       
-      const stats = calculateSongStats(songData, s)
+      const stats = calculateSongStats(entry.data, s, entry.title)
       if (stats) tempResults.push(stats)
     })
     

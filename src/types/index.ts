@@ -1,5 +1,4 @@
-export interface SongData {
-  title: string
+export interface SongLevelData {
   constant: number
   totalNotes: number
   composite: number
@@ -8,6 +7,15 @@ export interface SongData {
   separation: number
   bpmChange: number
   hsChange: number
+}
+
+export interface SongData {
+  id: number
+  title: string
+  level: {
+    '4'?: SongLevelData
+    '5'?: SongLevelData
+  }
 }
 
 export interface UserScore {
@@ -42,6 +50,4 @@ export interface SongStats {
   bad: number
 }
 
-export interface SongsDatabase {
-  [key: string]: SongData
-}
+export type SongsDatabase = SongData[]

@@ -4,6 +4,7 @@ import type { SongStats } from '../types'
 import { recommendSongs, setSongsDatabase } from '../utils/recommend'
 import { parsePastedScores, calculateSongStats } from '../utils/calculator'
 import { loadSongsData } from '../data/songs'
+import { expandSongsDatabase } from '../utils/songHelpers'
 
 interface Props {
   title: string
@@ -32,6 +33,7 @@ const allStats = ref<SongStats[]>([])
 onMounted(async () => {
   try {
     const songsDB = await loadSongsData()
+    console.log(songsDB)
     // 设置推荐算法使用的歌曲数据库
     setSongsDatabase(songsDB)
     
@@ -42,10 +44,14 @@ onMounted(async () => {
       scoreMap.set(`${s.id}-${s.level}`, s)
     })
     const result: SongStats[] = []
-    for (const [key, data] of Object.entries(songsDB)) {
+    
+    // 使用新的展开函数处理数据库
+    const expandedEntries = expandSongsDatabase(songsDB)
+    for (const entry of expandedEntries) {
+      const key = `${entry.id}-${entry.level}`
       const score = scoreMap.get(key)
       if (score) {
-        const stats = calculateSongStats(data, score)
+        const stats = calculateSongStats(entry.data, score, entry.title)
         if (stats) result.push(stats)
       }
     }

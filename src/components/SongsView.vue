@@ -3,6 +3,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { loadSongsData } from '../data/songs'
 import { parsePastedScores, calculateSongStats } from '../utils/calculator'
 import type { UserScore, SongStats, SongsDatabase } from '../types'
+import { findSongByIdLevel, expandSongsDatabase } from '../utils/songHelpers'
 import EditScoreModal from './EditScoreModal.vue'
 
 interface SongRow {
@@ -24,6 +25,15 @@ const searchTerm = ref('')
 // Edit Modal State
 const showEditModal = ref(false)
 const editingSong = ref<SongRow | null>(null)
+
+const editingSongData = computed(() => {
+  if (!editingSong.value || !songsDB.value) return undefined
+  const [idStr, levelStr] = editingSong.value.id.split('-')
+  const id = parseInt(idStr)
+  const level = parseInt(levelStr) as 4 | 5
+  const result = findSongByIdLevel(songsDB.value, id, level)
+  return result?.levelData
+})
 
 const openEditModal = (song: SongRow) => {
   editingSong.value = song
@@ -117,9 +127,9 @@ const handleSaveScore = (scoreData: Partial<UserScore>) => {
   
   // Recalculate stats
   if (songsDB.value) {
-     const data = songsDB.value[song.id]
-     if (data) {
-        const stats = calculateSongStats(data, newScore)
+     const result = findSongByIdLevel(songsDB.value, id, level as 4 | 5)
+     if (result) {
+        const stats = calculateSongStats(result.levelData, newScore, result.song.title)
         if (stats) {
            song.stats = stats
         }
@@ -218,15 +228,15 @@ onMounted(async () => {
     })
 
     const rows: SongRow[] = []
-    for (const [key, data] of Object.entries(db)) {
-      const [, levelStr] = key.split('-')
-      const level = parseInt(levelStr)
-      
+    const expandedEntries = expandSongsDatabase(db)
+    
+    for (const entry of expandedEntries) {
+      const key = `${entry.id}-${entry.level}`
       const score = scoreMap.get(key)
       let stats: SongStats | undefined
       
       if (score) {
-        const calculated = calculateSongStats(data, score)
+        const calculated = calculateSongStats(entry.data, score, entry.title)
         if (calculated) {
           stats = calculated
         }
@@ -234,9 +244,9 @@ onMounted(async () => {
 
       rows.push({
         id: key,
-        title: data.title,
-        level: level,
-        constant: data.constant,
+        title: entry.title,
+        level: entry.level,
+        constant: entry.data.constant,
         userScore: score,
         stats: stats
       })
@@ -549,7 +559,7 @@ const filteredSongs = computed(() => {
       :show="showEditModal"
       :title="editingSong?.title || ''"
       :initial-score="editingSong?.userScore"
-      :song-data="editingSong && songsDB ? songsDB[editingSong.id] : undefined"
+      :song-data="editingSongData"
       @close="closeEditModal"
       @save="handleSaveScore"
       @clear="handleClearScore"

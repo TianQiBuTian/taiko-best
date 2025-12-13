@@ -1,4 +1,4 @@
-import type { UserScore, SongData, SongStats } from '../types'
+import type { UserScore, SongData, SongLevelData, SongStats } from '../types'
 
 // 常量定义：P1用于calcP函数的范数计算，AH1暂未使用
 const CONSTANTS = { P1: 150, AH1: 3 }
@@ -340,21 +340,21 @@ export function calcIndividualRating(rating: number, raw_value: number): number 
  * - rhythm(节奏): 节奏感要求，基于音符分布和BPM变化
  * - complex(复杂度): 谱面复杂程度，基于composite值
  */
-export function calculateSongStats(songData: SongData, userScore: UserScore): SongStats | null {
+export function calculateSongStats(levelData: SongLevelData, userScore: UserScore, title: string = ''): SongStats | null {
   // 计算准确率
-  const accuracy = calcAccuracy(songData.totalNotes, userScore)
+  const accuracy = calcAccuracy(levelData.totalNotes, userScore)
   if (accuracy === 0) return null  // 准确率过低，不计算统计数据
   
   // 计算x, y和综合rating
-  const x = getXFromConstant(songData.constant)
+  const x = getXFromConstant(levelData.constant)
   const y = calcY(accuracy)
   const rating = calcSingleRating(x, y)
   
   // 计算各原始维度指标
-  const raw_complex = calcComplexityIndicator(songData.composite)
-  const raw_stamina = calcStaminaIndicator(songData.avgDensity, songData.instDensity)
-  const raw_speed = calcSpeedIndicator(songData.instDensity, songData.avgDensity)
-  const raw_rhythm = calcRhythmIndicator(songData.separation, songData.bpmChange)
+  const raw_complex = calcComplexityIndicator(levelData.composite)
+  const raw_stamina = calcStaminaIndicator(levelData.avgDensity, levelData.instDensity)
+  const raw_speed = calcSpeedIndicator(levelData.instDensity, levelData.avgDensity)
+  const raw_rhythm = calcRhythmIndicator(levelData.separation, levelData.bpmChange)
   
   // 使用几何平均将rating分配到各维度，MAX_CONSTANT_VALUE 是难度最大值的归一化系数
   const daigouryoku = SQRT(rating * x)
@@ -366,7 +366,7 @@ export function calculateSongStats(songData: SongData, userScore: UserScore): So
   
   return {
     id: userScore.id + userScore.level * 0.1,
-    title: songData.title,
+    title: title,
     rating,
     daigouryoku,
     stamina,
