@@ -90,8 +90,8 @@ const handleClear = () => {
 
 <template>
   <Transition name="modal">
-    <div v-if="show" class="z-[1000] fixed inset-0 flex justify-center items-center bg-black/50 transition-opacity duration-300" @click.self="$emit('close')">
-      <div class="bg-white shadow-[0_4px_6px_rgba(0,0,0,0.1)] rounded-lg w-[90%] max-w-[500px] transition-transform duration-300">
+    <div v-if="show" class="z-[1000] fixed inset-0 flex justify-center items-center bg-black/50 transition-opacity duration-300" @mousedown.self="$emit('close')">
+      <div class="bg-white shadow-[0_4px_6px_rgba(0,0,0,0.1)] rounded-lg w-[90%] max-w-[500px] transition-transform duration-300" @mousedown.stop>
         <div class="flex justify-between items-center px-5 py-4 border-gray-200 border-b">
           <h3 class="m-0 font-semibold text-lg">编辑成绩 - {{ title }}</h3>
           <button class="bg-none border-none text-gray-600 text-2xl cursor-pointer" @click="$emit('close')">&times;</button>
