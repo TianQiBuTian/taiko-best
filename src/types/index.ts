@@ -53,4 +53,11 @@ export interface SongStats {
   bad: number
 }
 
+export interface Announcement {
+  id: number
+  text: string
+  type?: 'info' | 'warning' | 'success'
+  date?: string
+}
+
 export type SongsDatabase = SongData[]
