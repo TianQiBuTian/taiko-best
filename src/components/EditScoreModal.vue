@@ -30,12 +30,9 @@ const form = ref({
 const previewStats = computed<SongStats | null>(() => {
   if (!props.songData) return null
   
-  // Construct a temporary UserScore object for calculation
-  // We only need fields that affect calculation (great, good, bad)
-  // But we should provide a valid object structure
   const tempScore: UserScore = {
-    id: 0, // Dummy
-    level: 0, // Dummy
+    id: 0,
+    level: 0,
     score: form.value.score,
     scoreRank: 0,
     great: form.value.great,

@@ -83,7 +83,6 @@ const updateLocalStorage = (newScore: UserScore) => {
   // rawScores is array of arrays
   rawScores = rawScores.filter((r: any[]) => !(Number(r[0]) === newScore.id && Number(r[1]) === newScore.level))
   
-  // Add new score
   rawScores.push(userScoreToArray(newScore))
   
   localStorage.setItem('taikoScoreData', JSON.stringify(rawScores))
@@ -128,7 +127,6 @@ const handleSaveScore = (scoreData: Partial<UserScore>) => {
     updatedAt: new Date().toISOString()
   }
   
-  // Update local state
   song.userScore = newScore
   
   // Recalculate stats
@@ -264,7 +262,6 @@ onMounted(async () => {
     }
     
     // Sort by default (maybe by title or constant?)
-    // Let's sort by constant desc
     rows.sort((a, b) => b.constant - a.constant)
     
     allSongs.value = rows
@@ -347,7 +344,7 @@ const filteredSongs = computed(() => {
   // 1. Search Filter
   if (searchTerm.value) {
     const term = searchTerm.value.toLowerCase()
-    list = list.filter(s => s.title.toLowerCase().includes(term))
+    list = list.filter(s => s.title.toLowerCase().includes(term) || s.title_cn?.toLowerCase().includes(term))
   }
   
   // 2. Constant Range Filter
@@ -585,7 +582,7 @@ const filteredSongs = computed(() => {
 
     <EditScoreModal
       :show="showEditModal"
-      :title="editingSong?.title || ''"
+      :title="onlyCnSongs? editingSong?.title_cn || '' : editingSong?.title || ''"
       :initial-score="editingSong?.userScore"
       :song-data="editingSongData"
       @close="closeEditModal"
