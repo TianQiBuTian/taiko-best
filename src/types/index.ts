@@ -52,7 +52,15 @@ export interface SongStats {
   good: number
   bad: number
   _constant?: number
-  _maxRatings?: number[]
+  _maxRatings?: {
+    maxRating: number
+    maxDaigouryoku: number
+    maxStamina: number
+    maxSpeed: number
+    maxAccuracyPower: number
+    maxRhythm: number
+    maxComplex: number
+  }
   _dimensionRanks?: Record<string, number>
   _isUnplayed?: boolean
   _isNew?: boolean

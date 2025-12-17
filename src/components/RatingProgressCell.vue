@@ -18,7 +18,8 @@ const props = defineProps<Props>()
         class="h-full transition-all duration-500 ease-out"
         :class="{
           'bg-emerald-300/60': (() => {
-            const maxRatings = (song as any)._maxRatings;
+            const maxRatings = song._maxRatings;
+            if (!maxRatings) return false;
             const key = valueKey as string;
             let maxValue = 0;
             if (key === 'rating') maxValue = maxRatings.maxRating;
@@ -28,12 +29,13 @@ const props = defineProps<Props>()
             else if (key === 'accuracy_power') maxValue = maxRatings.maxAccuracyPower;
             else if (key === 'rhythm') maxValue = maxRatings.maxRhythm;
             else if (key === 'complex') maxValue = maxRatings.maxComplex;
-            const currentValue = (song as any)._isUnplayed ? 0 : parseFloat(formatValue(song, valueKey));
+            const currentValue = song._isUnplayed ? 0 : parseFloat(formatValue(song, valueKey));
             const percentage = maxValue > 0 ? (currentValue / maxValue) * 100 : 0;
             return percentage >= 80;
           })(),
           'bg-blue-300/60': (() => {
-            const maxRatings = (song as any)._maxRatings;
+            const maxRatings = song._maxRatings;
+            if (!maxRatings) return false;
             const key = valueKey as string;
             let maxValue = 0;
             if (key === 'rating') maxValue = maxRatings.maxRating;
@@ -43,7 +45,7 @@ const props = defineProps<Props>()
             else if (key === 'accuracy_power') maxValue = maxRatings.maxAccuracyPower;
             else if (key === 'rhythm') maxValue = maxRatings.maxRhythm;
             else if (key === 'complex') maxValue = maxRatings.maxComplex;
-            const currentValue = (song as any)._isUnplayed ? 0 : parseFloat(formatValue(song, valueKey));
+            const currentValue = song._isUnplayed ? 0 : parseFloat(formatValue(song, valueKey));
             const percentage = maxValue > 0 ? (currentValue / maxValue) * 100 : 0;
             return percentage >= 60 && percentage < 80;
           })(),
