@@ -410,10 +410,8 @@ const anyalyze = async (input: string) => {
 <template>
   <div class="bg-white shadow-[0_4px_6px_rgba(0,0,0,0.1)] mx-auto p-[30px] rounded-[10px] max-w-[800px]">
     <section class="bg-[#f8f9fa] mb-6 p-5 border border-[#e0e0e0] border-l-[#2196f3] border-l-4 rounded-md text-[#333]">
-      <p class="my-1">算法更新时间: 2025/12/11</p>
-      <p class="my-1">网页更新时间: 2025/12/13</p>
       <p class="my-1">曲目列表页面点击歌曲可以修改成绩，右下角菜单按钮可以加入我们的QQ群</p>
-      <p class="my-1">本 Rating 系统旨在分析自身弱点并针对练习, 请勿用于攀比</p>
+      <p class="my-1">本 Rating 系统旨在分析自身弱点并针对练习，请勿用于攀比</p>
     </section>
     <section>
       <!-- 新的向导 -->

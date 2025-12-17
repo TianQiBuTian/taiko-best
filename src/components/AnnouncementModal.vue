@@ -35,54 +35,49 @@ const getIcon = (type?: string) => {
 
 const getIconColor = (type?: string) => {
   switch (type) {
-    case 'success': return 'text-emerald-400 bg-emerald-400/20'
-    case 'warning': return 'text-amber-400 bg-amber-400/20'
+    case 'success': return 'text-[#34C759] bg-[#34C759]/15'
+    case 'warning': return 'text-[#FF9500] bg-[#FF9500]/15'
     case 'info':
-    default: return 'text-cyan-400 bg-cyan-400/20'
+    default: return 'text-[#007AFF] bg-[#007AFF]/15'
   }
 }
 </script>
 
 <template>
   <Transition name="modal">
-    <div v-if="show" class="z-[2000] fixed inset-0 flex justify-center items-center bg-black/60 backdrop-blur-md transition-all duration-300" @click="handleOverlayClick">
-      <div class="relative bg-[#1a1b26]/90 shadow-[0_0_50px_rgba(0,0,0,0.5)] backdrop-blur-xl border border-white/10 w-[90%] max-w-[500px] overflow-hidden transition-all duration-300 modal-content transform">
+    <div v-if="show" class="z-[2000] fixed inset-0 flex justify-center items-center bg-black/40 backdrop-blur-sm transition-all duration-500" @click="handleOverlayClick">
+      <div class="relative bg-[#1c1c1e]/80 shadow-[0_20px_70px_rgba(0,0,0,0.5)] backdrop-blur-2xl border border-white/10 rounded-[32px] w-[90%] max-w-[440px] overflow-hidden transition-all duration-500 modal-content transform">
         
-        <!-- Header with modern gradient -->
-        <div class="relative bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 p-1">
-          <div class="bg-[#1a1b26]/40 backdrop-blur-sm px-6 py-6">
-            <div class="z-10 relative flex justify-between items-center">
-              <div>
-                <h3 class="bg-clip-text bg-gradient-to-r from-white to-white/80 m-0 font-black text-transparent text-3xl italic tracking-tight">ANNOUNCEMENTS</h3>
-                <p class="opacity-80 m-0 mt-1 font-medium text-violet-200 text-xs uppercase tracking-widest">Latest Updates & News</p>
-              </div>
-              <button 
-                class="group flex justify-center items-center bg-white/10 hover:bg-white/20 border border-white/10 hover:border-white/30 rounded-full w-10 h-10 text-white transition-all duration-300 cursor-pointer" 
-                @click="handleClose"
-              >
-                <i class="group-hover:rotate-90 transition-transform duration-300 fas fa-times"></i>
-              </button>
+        <!-- Header -->
+        <div class="px-8 pt-8 pb-4">
+          <div class="flex justify-between items-center">
+            <div>
+              <h3 class="m-0 font-bold text-white text-2xl tracking-tight">公告</h3>
+              <p class="opacity-50 m-0 mt-0.5 font-medium text-white text-xs uppercase tracking-wider">最新动态与更新</p>
             </div>
+            <button 
+              class="flex justify-center items-center bg-white/10 hover:bg-white/20 rounded-full w-8 h-8 text-white/70 transition-all duration-200 cursor-pointer" 
+              @click="handleClose"
+            >
+              <i class="text-sm fas fa-times"></i>
+            </button>
           </div>
         </div>
         
         <!-- Content -->
-        <div class="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
-          <div class="flex flex-col gap-4">
+        <div class="px-6 py-2 max-h-[55vh] overflow-y-auto custom-scrollbar">
+          <div class="flex flex-col gap-3">
             <div 
               v-for="(item, index) in announcements" 
               :key="item.id"
-              class="group relative bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 rounded-2xl overflow-hidden transition-all duration-300"
-              :style="{ animationDelay: `${index * 100}ms` }"
+              class="group relative bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05] rounded-[22px] overflow-hidden transition-all duration-300"
+              :style="{ animationDelay: `${index * 80}ms` }"
               :class="'animate-slide-in'"
             >
-              <!-- Glow effect on hover -->
-              <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-all -translate-x-full group-hover:translate-x-full duration-1000 transform"></div>
-              
               <div class="relative flex gap-4 p-4">
                 <!-- Icon Box -->
                 <div 
-                  class="flex flex-shrink-0 justify-center items-center shadow-lg rounded-xl w-12 h-12 text-lg"
+                  class="flex flex-shrink-0 justify-center items-center rounded-2xl w-11 h-11 text-lg"
                   :class="getIconColor(item.type)"
                 >
                   <i class="fas" :class="getIcon(item.type)"></i>
@@ -90,10 +85,10 @@ const getIconColor = (type?: string) => {
                 
                 <!-- Text Content -->
                 <div class="flex-1 min-w-0">
-                  <div class="text-gray-300 text-lg break-words leading-relaxed" v-html="item.text"></div>
-                  <div class="flex items-center gap-2 mt-2">
-                    <i class="text-gray-500 text-sm fas fa-clock"></i>
-                    <span class="font-mono text-gray-500 text-sm uppercase tracking-wider">{{ item.date }}</span>
+                  <div class="text-[15px] text-white/90 break-words leading-snug" v-html="item.text"></div>
+                  <div class="flex items-center gap-1.5 opacity-40 mt-2">
+                    <i class="text-[10px] text-white/90 fas fa-clock"></i>
+                    <span class="font-medium text-[11px] text-white/90 uppercase tracking-wide">{{ item.date }}</span>
                   </div>
                 </div>
               </div>
@@ -102,12 +97,12 @@ const getIconColor = (type?: string) => {
         </div>
         
         <!-- Footer -->
-        <div class="bg-black/20 px-6 py-5 border-white/5 border-t text-center">
+        <div class="px-8 pt-4 pb-8 text-center">
           <button 
-            class="bg-white hover:bg-gray-100 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] px-10 py-3 border-none rounded-full font-bold text-gray-900 text-sm tracking-wide transition-all hover:-translate-y-1 active:translate-y-0 duration-200 cursor-pointer transform" 
+            class="bg-[#007AFF] hover:bg-[#0071e3] shadow-lg py-3.5 border-none rounded-2xl w-full font-semibold text-[15px] text-white active:scale-[0.98] transition-all duration-200 cursor-pointer transform" 
             @click="handleClose"
           >
-            GOT IT
+            我知道了
           </button>
         </div>
       </div>
