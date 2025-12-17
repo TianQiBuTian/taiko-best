@@ -51,6 +51,12 @@ export interface SongStats {
   great: number
   good: number
   bad: number
+  _constant?: number
+  _maxRatings?: number[]
+  _dimensionRanks?: Record<string, number>
+  _isUnplayed?: boolean
+  _isNew?: boolean
+  _ratingDiff?: number
 }
 
 export interface Announcement {

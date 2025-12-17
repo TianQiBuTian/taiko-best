@@ -256,7 +256,10 @@ watch(
         <tbody>
           <tr v-for="(item, index) in data" :key="index" :class="{'bg-[#f2f2f2]': index % 2 === 1}">
             <td class="p-2.5 border-[#ddd] border-b text-left">{{ index + 1 }}</td>
-            <td class="p-2.5 border-[#ddd] border-b text-left">{{ item.title}}</td>
+            <td class="p-2.5 border-[#ddd] border-b text-left">
+              {{ item.title}}
+              <span v-if="(item as any)._isNew" class="ml-1 px-1 bg-red-500 text-white text-xs rounded">NEW</span>
+            </td>
             <td class="p-2.5 border-[#ddd] border-b text-left">{{ item.great }}</td>
             <td class="p-2.5 border-[#ddd] border-b text-left">{{ item.good }}</td>
             <td class="p-2.5 border-[#ddd] border-b text-left">{{ item.bad }}</td>
@@ -265,6 +268,9 @@ watch(
             <td class="p-1.5 border-[#ddd] border-b text-left">
               <template v-if="(item as any)._maxRatings">
                 <RatingProgressCell :song="item" :valueKey="valueKey" :formatValue="formatValue" />
+                <div v-if="(item as any)._ratingDiff && (item as any)._ratingDiff !== 0" class="text-xs mt-1" :class="(item as any)._ratingDiff > 0 ? 'text-red-500' : 'text-blue-500'">
+                    {{ (item as any)._ratingDiff > 0 ? '+' : '' }}{{ (item as any)._ratingDiff.toFixed(2) }}
+                </div>
               </template>
               <div v-else class="text-gray-400 text-xs">-</div>
             </td>

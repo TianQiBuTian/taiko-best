@@ -314,6 +314,12 @@ const anyalyze = (input: string) => {
     console.error('Failed to parse input for analysis', e)
   }
 
+  // 保存旧数据到 lastTaikoScore
+  const currentScoreData = localStorage.getItem('taikoScoreData')
+  if (currentScoreData) {
+    localStorage.setItem('lastTaikoScore', currentScoreData)
+  }
+
   // 将数据存储到 localStorage
   localStorage.setItem('taikoScoreData', input)
   // 触发自定义事件以通知其他组件

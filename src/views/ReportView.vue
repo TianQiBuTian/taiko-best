@@ -22,6 +22,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 const notice = ref('正在加载数据…')
 const results = ref<SongStats[]>([])
 const allResults = ref<SongStats[]>([])
+const lastResults = ref<SongStats[]>([])
+const lastOverallRating = ref(0)
 const onlyCnSongs = ref(false)
 const songsDB = ref<SongsDatabase | null>(null)
 const overallRating = ref(0)
@@ -147,6 +149,34 @@ onMounted(async () => {
         })
 
         allResults.value = tempResults
+
+        // 计算旧数据
+        const lastScoreInput = localStorage.getItem('lastTaikoScore')
+        if (lastScoreInput) {
+            try {
+                const lastScores = parsePastedScores(lastScoreInput)
+                const lastTempResults: SongStats[] = []
+                
+                lastScores.forEach(s => {
+                    const key = `${s.id}-${s.level}`
+                    const entry = entryMap.get(key)
+                    if (!entry) return
+
+                    const stats = calculateSongStats(entry.data, s, entry.title)
+                    if (stats) lastTempResults.push(stats)
+                })
+                
+                const lastFiltered = filterDuplicateSongs(lastTempResults, duplicateSongs)
+                lastResults.value = lastFiltered
+                
+                const ratingMid = getTop20Median(lastFiltered, 'rating')
+                const ratingAve = getTop20WeightedAverage(lastFiltered, 'rating')
+                lastOverallRating.value = topValueCompensate(ratingMid, 15.28, ratingAve, 15.31, 14.59)
+            } catch (e) {
+                console.error('Failed to process last score data', e)
+            }
+        }
+
         applyCnFilter()
 
         if (tempResults.length === 0) {
@@ -222,12 +252,19 @@ function enhanceSongStats(songs: SongStats[], allFilteredSongs: SongStats[]): So
             dimensionRanks[key] = dimensionRankMaps[key].get(song.title) ?? 0
         }
 
+        // 计算与旧数据的差异
+        const lastSong = lastResults.value.find(s => s.id === song.id && s.level === song.level)
+        const isNew = !lastSong
+        const ratingDiff = lastSong ? song.rating - lastSong.rating : 0
+
         return {
             ...song,
             _constant: levelData.constant,
             _maxRatings: maxRatings,
             _dimensionRanks: dimensionRanks,
-            _isUnplayed: song.great === 0 && song.good === 0 && song.bad === 0
+            _isUnplayed: song.great === 0 && song.good === 0 && song.bad === 0,
+            _isNew: isNew,
+            _ratingDiff: ratingDiff
         }
     })
 }
@@ -315,7 +352,12 @@ async function saveElementAsImage(element: HTMLElement | null, fileName: string)
                         <div class="flex justify-center mb-[30px] w-full">
                             <div class="bg-[#f8f9fa] p-[10px] rounded-lg min-w-[120px] text-center">
                                 <div class="text-gray-600 text-m">Rating</div>
-                                <div class="font-bold text-[28px] text-primary">{{ overallRating.toFixed(2) }}</div>
+                                <div class="font-bold text-[28px] text-primary">
+                                    {{ overallRating.toFixed(2) }}
+                                    <span v-if="lastOverallRating > 0" class="text-sm ml-2" :class="overallRating >= lastOverallRating ? 'text-red-500' : 'text-blue-500'">
+                                        {{ overallRating >= lastOverallRating ? '+' : '' }}{{ (overallRating - lastOverallRating).toFixed(2) }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
