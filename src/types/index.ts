@@ -72,3 +72,5 @@ export interface Announcement {
 export type SongsDatabase = SongData[]
 
 export type LockedScores = Record<string, UserScore>
+
+export type RatingAlgorithm = 'great-only' | 'comprehensive'

@@ -20,7 +20,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const store = useScoreStore()
-const { songsDB, allSongStats, onlyCnSongs, blacklistedSongs } = store
+const { songsDB, allSongStats, onlyCnSongs, blacklistedSongs, ratingAlgorithm } = store
 
 const isLoading = ref(false)
 const difficultyAdjustment = ref<number>(0)
@@ -114,7 +114,8 @@ const calculateRecommendations = async () => {
           filterFn,
           currentDifficultyAdjustment,
           best20ConstantBase.value,
-          blacklistedSongs.value
+          blacklistedSongs.value,
+          ratingAlgorithm.value
         );
         
         // 如果歌曲数量不足，增加难度修正值
@@ -164,7 +165,7 @@ const calculateRecommendations = async () => {
 
 // 监听 showMode 和 valueKey 变化，重新计算推荐
 watch(
-  [() => props.showMode, () => props.valueKey, allSongStats, blacklistedSongs],
+  [() => props.showMode, () => props.valueKey, allSongStats, blacklistedSongs, ratingAlgorithm],
   (newVals, oldVals) => {
     if (props.showMode === 'recommend') {
       // 如果是从其他模式切换到推荐模式，或者 valueKey 变化，重置难度调整值

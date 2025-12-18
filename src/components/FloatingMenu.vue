@@ -2,8 +2,10 @@
 import { eventBus } from '@utils/eventBus'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useScoreStore } from '@/store/scoreStore'
 
 const route = useRoute()
+const { ratingAlgorithm, setRatingAlgorithm } = useScoreStore()
 const isOpen = ref(false)
 const onlyCnSongs = ref(false)
 
@@ -60,6 +62,31 @@ function toggleCnSongs() {
           </div>
           
           <div class="flex flex-col gap-3">
+            <!-- 算法选择 -->
+            <div class="flex flex-col gap-2 mb-2">
+              <span class="px-2 font-medium text-[#8E8E93] text-xs uppercase tracking-wider">评分算法</span>
+              <div class="flex flex-col gap-2">
+                <button
+                  @click="setRatingAlgorithm('great-only')"
+                  class="flex items-center gap-4 bg-black/5 hover:bg-black/10 px-5 py-4 rounded-2xl w-full font-semibold text-[#1D1D1F] text-base active:scale-[0.98] transition-all duration-200 cursor-pointer"
+                  :class="{ 'bg-[#007AFF]/10 text-[#007AFF]': ratingAlgorithm === 'great-only' }"
+                >
+                  <i v-if="ratingAlgorithm === 'great-only'" class="text-[#007AFF] fa-regular fa-circle-check"></i>
+                  <i v-else class="fa-regular fa-circle"></i>
+                  <span>良率准度算法</span>
+                </button>
+                <button
+                  @click="setRatingAlgorithm('comprehensive')"
+                  class="flex items-center gap-4 bg-black/5 hover:bg-black/10 px-5 py-4 rounded-2xl w-full font-semibold text-[#1D1D1F] text-base active:scale-[0.98] transition-all duration-200 cursor-pointer"
+                  :class="{ 'bg-[#007AFF]/10 text-[#007AFF]': ratingAlgorithm === 'comprehensive' }"
+                >
+                  <i v-if="ratingAlgorithm === 'comprehensive'" class="text-[#007AFF] fa-regular fa-circle-check"></i>
+                  <i v-else class="fa-regular fa-circle"></i>
+                  <span>综合准度算法</span>
+                </button>
+              </div>
+            </div>
+
             <!-- 只查看国服设置 -->
             <button
               @click="toggleCnSongs"

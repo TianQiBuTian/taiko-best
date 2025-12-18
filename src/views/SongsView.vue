@@ -221,6 +221,24 @@ watch(maxConstant, (v) => {
   if (v < minConstant.value) maxConstant.value = minConstant.value
 })
 
+watch(() => store.ratingAlgorithm.value, () => {
+  // Recalculate stats for all songs when algorithm changes
+  allSongs.value = allSongs.value.map(song => {
+    if (song.userScore) {
+      const [idStr, levelStr] = song.id.split('-')
+      const id = parseInt(idStr)
+      const level = parseInt(levelStr) as 4 | 5
+      const result = findSongByIdLevel(songsDB.value!, id, level)
+      if (result) {
+        const stats = calculateSongStats(result.levelData, song.userScore, song.title, store.ratingAlgorithm.value)
+        return { ...song, stats: stats || undefined }
+      }
+    }
+    return song
+  })
+  applyCnFilter()
+})
+
 onMounted(async () => {
   // 从 localStorage 读取设置
   const savedSetting = localStorage.getItem('onlyCnSongs')
@@ -251,7 +269,7 @@ onMounted(async () => {
       let stats: SongStats | undefined
       
       if (score) {
-        const calculated = calculateSongStats(entry.data, score, entry.title)
+        const calculated = calculateSongStats(entry.data, score, entry.title, store.ratingAlgorithm.value)
         if (calculated) {
           stats = calculated
         }

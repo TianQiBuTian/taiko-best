@@ -1,4 +1,4 @@
-import type { RatingDimensions, SongLevelData, SongStats, UserScore } from '@/types'
+import type { RatingDimensions, SongLevelData, SongStats, UserScore, RatingAlgorithm } from '@/types'
 
 // 常量定义：P1用于calcP函数的范数计算，AH1暂未使用
 const CONSTANTS = { P1: 150, AH1: 3 }
@@ -10,10 +10,15 @@ const MAX = Math.max
  * 官方计分法中，2可 = 1良
  * 但我们希望在计算准确率时，给予良判更高的权重，因此暂时将可的权重设为0，并在需要时进行调整以修正对最终评分的影响
  */
-const ACCURACY_WEIGHT = {
-  GREAT: 1,
-  // GOOD: 0.5
-  GOOD: 0
+const ACCURACY_WEIGHTS: Record<RatingAlgorithm, { GREAT: number, GOOD: number }> = {
+  'great-only': {
+    GREAT: 1,
+    GOOD: 0
+  },
+  'comprehensive': {
+    GREAT: 1,
+    GOOD: 0.5
+  }
 }
 
 
@@ -102,23 +107,30 @@ export function getXFromConstant(constant: number): number {
  * 计算准确度分数 (Y轴值)
  * 根据玩家的准确率计算对应的Y轴分数，使用分段函数模拟难度曲线
  * @param accuracy - 准确率 (good数/总notes数)，范围 [0, 1]
+ * @param algorithm - 使用的算法类型
  * @returns Y轴分数，代表准确度维度的能力值
- * 
- * 分段逻辑：
- * - accuracy ≤ 0.5: 返回0，过低准确率不计分
- * - 0.5 < accuracy ≤ 0.6832: 使用幂函数快速增长曲线
- * - 0.6832 < accuracy ≤ 0.9625: 使用线性函数平稳增长
- * - accuracy > 0.9625: 使用指数函数陡峭增长，奖励高精度
  */
-export function calcY(accuracy: number): number {
+export function calcY(accuracy: number, algorithm: RatingAlgorithm = 'great-only'): number {
   const g = accuracy
-  if (g <= 0.5) return 0
-  if (g <= 0.6832) {
-    return 4425 * POWER(g - 0.5, 4.876)
-  } else if (g <= 0.9625) {
-    return 30.748 * g - 19.88
+  if (algorithm === 'great-only') {
+    if (g <= 0.5) return 0
+    if (g <= 0.6832) {
+      return 4425 * POWER(g - 0.5, 4.876)
+    } else if (g <= 0.9625) {
+      return 30.748 * g - 19.88
+    } else {
+      return 0.228 * POWER(2.718, 3.386 * POWER(g, 24.658)) + 8.862
+    }
   } else {
-    return 0.228 * POWER(2.718, 3.386 * POWER(g, 24.658)) + 8.862
+    // 综合准度算法
+    if (g <= 0.75) return 0
+    if (g <= 0.8278) {
+      return 16730 * POWER(g - 0.75, 3.805)
+    } else if (g <= 0.9793) {
+      return 56.4468 * g - 45.7187
+    } else {
+      return 0.2246 * POWER(2.718, 120 * (g - 0.972)) + 9.02
+    }
   }
 }
 
@@ -190,8 +202,8 @@ export function calcSingleRating(x: number, y: number): number {
  * - r_ymin: 保持当前x不变，准确度降到最低(0)时的rating
  * - r_ymax: 保持当前x不变，准确度达到最高(理论最大值)时的rating
  */
-export function calcBoundaries(x: number, y: number) {
-  const y_max_val = 0.228 * POWER(2.718, 3.386 * POWER(1, 24.658)) + 8.862
+export function calcBoundaries(x: number, y: number, algorithm: RatingAlgorithm = 'great-only') {
+  const y_max_val = calcY(1, algorithm)
   const r_xmin = calcSingleRating(0.05, y)
   const r_xmax = calcSingleRating(15.5, y)
   const r_ymin = calcSingleRating(x, 0)
@@ -296,14 +308,14 @@ export function calcRatingIndicator(constant: number): number {
  * 根据用户成绩计算准确率，作为后续评分的基础
  * @param totalNotes - 谱面总音符数
  * @param userScore - 用户游玩成绩（good数、combo等）
- * @returns 准确率，范围 [0, 1]，低于50%返回0
- * 算法逻辑：
- * - 准确率 = (良判数 * 良权重 + 可判数 * 可权重) / 总音符数
- * - 如果计算结果低于50%，则视为无效成绩，返回0
+ * @param algorithm - 使用的算法类型
+ * @returns 准确率，范围 [0, 1]，低于阈值返回0
  */
-export function calcAccuracy(totalNotes: number, userScore: UserScore): (number) {
-  const accuracy = (userScore.great * ACCURACY_WEIGHT.GREAT + userScore.good * ACCURACY_WEIGHT.GOOD) / totalNotes
-  if (accuracy < 0.5) return 0
+export function calcAccuracy(totalNotes: number, userScore: UserScore, algorithm: RatingAlgorithm = 'great-only'): (number) {
+  const weights = ACCURACY_WEIGHTS[algorithm]
+  const accuracy = (userScore.great * weights.GREAT + userScore.good * weights.GOOD) / totalNotes
+  const threshold = algorithm === 'great-only' ? 0.5 : 0.75
+  if (accuracy < threshold) return 0
   return accuracy
 }
 
@@ -340,9 +352,9 @@ export function calcIndividualRating(rating: number, raw_value: number): number 
  * - maxComplex: 最大复杂度
  */
 
-export function calcMaxRatings(levelData: SongLevelData): RatingDimensions {
+export function calcMaxRatings(levelData: SongLevelData, algorithm: RatingAlgorithm = 'great-only'): RatingDimensions {
   const x = getXFromConstant(levelData.constant)
-  const y = calcY(1)  // 理论最高准确率对应的Y值
+  const y = calcY(1, algorithm)  // 理论最高准确率对应的Y值
   const rating = calcSingleRating(x, y)
   const daigouryoku = SQRT(rating * x)
   const accuracy_power = SQRT(rating * y)  // 精度力 = √(maxRating × y)
@@ -366,30 +378,18 @@ export function calcMaxRatings(levelData: SongLevelData): RatingDimensions {
  * 这是核心函数，将谱面数据和用户成绩综合计算出多维度的能力评估
  * @param songData - 谱面基础数据（难度、密度、节奏等）
  * @param userScore - 用户游玩成绩（good数、combo等）
+ * @param title - 歌曲标题
+ * @param algorithm - 使用的算法类型
  * @returns 包含rating和各维度能力值的统计对象，准确率过低时返回null
- * 
- * 计算流程：
- * 1. 计算准确率并验证有效性（≥50%）
- * 2. 计算Y值（准确度分数）和综合rating
- * 3. 计算各原始维度指标（复杂度、耐力、速度、节奏）
- * 4. 使用几何平均（√(rating × 维度值)）计算最终各维度能力
- * 
- * 各维度说明：
- * - daigouryoku(打鼓力): 综合难度能力 = √(rating × x)
- * - stamina(耐力): 持久战能力，基于密度分布
- * - speed(速度): 手速/爆发力，基于瞬时密度
- * - accuracy_power(精度力): 准确度能力 = √(rating × y)
- * - rhythm(节奏): 节奏感要求，基于音符分布和BPM变化
- * - complex(复杂度): 谱面复杂程度，基于composite值
  */
-export function calculateSongStats(levelData: SongLevelData, userScore: UserScore, title: string = ''): SongStats | null {
+export function calculateSongStats(levelData: SongLevelData, userScore: UserScore, title: string = '', algorithm: RatingAlgorithm = 'great-only'): SongStats | null {
   // 计算准确率
-  const accuracy = calcAccuracy(levelData.totalNotes, userScore)
+  const accuracy = calcAccuracy(levelData.totalNotes, userScore, algorithm)
   if (accuracy === 0) return null  // 准确率过低，不计算统计数据
   
   // 计算x, y和综合rating
   const x = getXFromConstant(levelData.constant)
-  const y = calcY(accuracy)
+  const y = calcY(accuracy, algorithm)
   const rating = calcSingleRating(x, y)
   
   // 计算各原始维度指标

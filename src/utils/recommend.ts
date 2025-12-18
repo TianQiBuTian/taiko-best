@@ -1,4 +1,4 @@
-﻿import type { SongStats, SongLevelData, SongsDatabase, RatingDimensions } from '@/types'
+﻿import type { SongStats, SongLevelData, SongsDatabase, RatingDimensions, RatingAlgorithm } from '@/types'
 import { findSongByTitle } from './songHelpers'
 import {
   calcRatingIndicator,
@@ -70,7 +70,8 @@ function filterAndScoreCandidates(
   dimensionKeys: (keyof SongStats)[],
   dimensionRankMaps: Record<string, Map<string, number>>,
   best20ConstantBase: number,
-  difficultyAdjustment: number
+  difficultyAdjustment: number,
+  algorithm: RatingAlgorithm = 'great-only'
 ) {
   return candidates.map(song => {
     const songData = findSongByTitle(filteredDatabase, song.title)
@@ -83,7 +84,7 @@ function filterAndScoreCandidates(
     const songRatingValue = calcRatingIndicator(levelData.constant)
     const songIndicatorValue = getSongIndicatorValue(levelData, bestKey)
     const userScoreValue = song[bestKey] as number
-    const maxRatings = calcMaxRatings(levelData)
+    const maxRatings = calcMaxRatings(levelData, algorithm)
 
     const songMaxScore = (bestKey in maxRatings) ? maxRatings[bestKey as keyof RatingDimensions] : 0
     
@@ -136,7 +137,8 @@ export function recommendSongs(
   filterFn?: (id: number) => boolean,
   difficultyAdjustment: number = 0,
   constantBase?: number,
-  blacklist: string[] = []
+  blacklist: string[] = [],
+  algorithm: RatingAlgorithm = 'great-only'
 ): SongStats[] {
   if (!cachedSongsDatabase || cachedSongsDatabase.length === 0) return []
 
@@ -283,7 +285,8 @@ export function recommendSongs(
     dimensionKeys,
     dimensionRankMaps,
     best20ConstantBase,
-    difficultyAdjustment
+    difficultyAdjustment,
+    algorithm
   )
 
   // 按推荐分数排序

@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import type { SongStats, SongsDatabase, UserScore, LockedScores } from '@/types'
+import type { SongStats, SongsDatabase, UserScore, LockedScores, RatingAlgorithm } from '@/types'
 import { loadSongsData } from '@data/songs'
 import {
   calcMaxRatings,
@@ -21,6 +21,7 @@ const allSongStats = ref<SongStats[]>([])
 const lastSongStats = ref<SongStats[]>([])
 const filteredSongStats = ref<SongStats[]>([])
 const onlyCnSongs = ref(false)
+const ratingAlgorithm = ref<RatingAlgorithm>('great-only')
 const blacklistedSongs = ref<string[]>([])
 const lockedScores = ref<LockedScores>({})
 const isLoading = ref(false)
@@ -73,7 +74,7 @@ function enhanceSongStats(songs: SongStats[], allFilteredSongs: SongStats[]): So
     if (!result) return song
 
     const levelData = result.levelData
-    const maxRatings = calcMaxRatings(levelData)
+    const maxRatings = calcMaxRatings(levelData, ratingAlgorithm.value)
 
     const dimensionRanks: Record<string, number> = {}
     for (const key of dimensionKeys) {
@@ -182,6 +183,11 @@ export function useScoreStore() {
         onlyCnSongs.value = savedSetting === 'true'
       }
 
+      const savedAlgorithm = localStorage.getItem('ratingAlgorithm') as RatingAlgorithm
+      if (savedAlgorithm === 'great-only' || savedAlgorithm === 'comprehensive') {
+        ratingAlgorithm.value = savedAlgorithm
+      }
+
       const savedBlacklist = localStorage.getItem('taiko-blacklisted-songs')
       if (savedBlacklist) {
         try {
@@ -238,7 +244,7 @@ export function useScoreStore() {
         const entry = entryMap.get(key)
         if (!entry) return
 
-        const stats = calculateSongStats(entry.data, s, entry.title)
+        const stats = calculateSongStats(entry.data, s, entry.title, ratingAlgorithm.value)
         if (stats) tempResults.push(stats)
       })
 
@@ -256,7 +262,7 @@ export function useScoreStore() {
             const entry = entryMap.get(key)
             if (!entry) return
 
-            const stats = calculateSongStats(entry.data, s, entry.title)
+            const stats = calculateSongStats(entry.data, s, entry.title, ratingAlgorithm.value)
             if (stats) lastTempResults.push(stats)
           })
           
@@ -281,6 +287,12 @@ export function useScoreStore() {
     onlyCnSongs.value = value
     localStorage.setItem('onlyCnSongs', String(value))
     applyCnFilter()
+  }
+
+  const setRatingAlgorithm = (value: RatingAlgorithm) => {
+    ratingAlgorithm.value = value
+    localStorage.setItem('ratingAlgorithm', value)
+    init()
   }
 
   const toggleBlacklist = (id: number, level: number) => {
@@ -337,6 +349,7 @@ export function useScoreStore() {
     filteredSongStats,
     lastSongStats,
     onlyCnSongs,
+    ratingAlgorithm,
     blacklistedSongs,
     lockedScores,
     isLoading,
@@ -347,6 +360,7 @@ export function useScoreStore() {
     topLists,
     init,
     setCnFilter,
+    setRatingAlgorithm,
     toggleBlacklist,
     toggleLock,
     updateLockedScore
