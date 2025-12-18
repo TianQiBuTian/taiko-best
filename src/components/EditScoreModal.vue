@@ -22,7 +22,7 @@ const emit = defineEmits<{
 }>()
 
 const store = useScoreStore()
-const { blacklistedSongs, toggleBlacklist } = store
+const { blacklistedSongs, toggleBlacklist, lockedScores, toggleLock: storeToggleLock, updateLockedScore } = store
 
 const form = ref({
   score: 0,
@@ -33,7 +33,10 @@ const form = ref({
   combo: 0
 })
 
-const isLocked = ref(false)
+const isLocked = computed(() => {
+  const key = getLockKey()
+  return key ? !!lockedScores.value[key] : false
+})
 
 const isBlacklisted = computed(() => {
   const key = getLockKey()
@@ -58,59 +61,21 @@ const getLockKey = () => {
   return null
 }
 
-const checkLockStatus = () => {
-  const key = getLockKey()
-  if (!key) {
-    isLocked.value = false
-    return
-  }
-  try {
-    const lockedDataStr = localStorage.getItem('taiko-locked-songs')
-    if (lockedDataStr) {
-      const lockedData: LockedScores = JSON.parse(lockedDataStr)
-      isLocked.value = !!lockedData[key]
-    } else {
-      isLocked.value = false
-    }
-  } catch (e) {
-    isLocked.value = false
-  }
-}
-
 const toggleLock = () => {
-  const key = getLockKey()
-  if (!key) return
-
-  try {
-    const lockedDataStr = localStorage.getItem('taiko-locked-songs')
-    let lockedData: LockedScores = lockedDataStr ? JSON.parse(lockedDataStr) : {}
-
-    if (isLocked.value) {
-      delete lockedData[key]
-      isLocked.value = false
-    } else {
-      const scoreToLock: UserScore = {
-        id: props.songId || props.initialScore?.id || 0,
-        level: props.difficulty || props.initialScore?.level || 0,
-        score: form.value.score,
-        scoreRank: props.initialScore?.scoreRank || 0,
-        great: form.value.great,
-        good: form.value.good,
-        bad: form.value.bad,
-        drumroll: form.value.drumroll,
-        combo: form.value.combo,
-        playCount: props.initialScore?.playCount || 0,
-        clearCount: props.initialScore?.clearCount || 0,
-        fullcomboCount: props.initialScore?.fullcomboCount || 0,
-        perfectCount: props.initialScore?.perfectCount || 0,
-        updatedAt: new Date().toISOString()
-      }
-      lockedData[key] = scoreToLock
-      isLocked.value = true
-    }
-    localStorage.setItem('taiko-locked-songs', JSON.stringify(lockedData))
-  } catch (e) {
-    console.error('Failed to toggle lock', e)
+  const id = props.songId || props.initialScore?.id || 0
+  const level = props.difficulty || props.initialScore?.level || 0
+  
+  if (isLocked.value) {
+    storeToggleLock(id, level)
+  } else {
+    storeToggleLock(id, level, {
+      ...form.value,
+      scoreRank: props.initialScore?.scoreRank || 0,
+      playCount: props.initialScore?.playCount || 0,
+      clearCount: props.initialScore?.clearCount || 0,
+      fullcomboCount: props.initialScore?.fullcomboCount || 0,
+      perfectCount: props.initialScore?.perfectCount || 0
+    })
   }
 }
 
@@ -139,7 +104,6 @@ const previewStats = computed<SongStats | null>(() => {
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
-    checkLockStatus()
     if (props.initialScore) {
       form.value = {
         score: props.initialScore.score,
@@ -164,35 +128,9 @@ watch(() => props.show, (newVal) => {
 
 const handleSave = () => {
   if (isLocked.value) {
-    const key = getLockKey()
-    if (key) {
-      try {
-        const lockedDataStr = localStorage.getItem('taiko-locked-songs')
-        let lockedData: LockedScores = lockedDataStr ? JSON.parse(lockedDataStr) : {}
-        
-        const scoreToLock: UserScore = {
-          id: props.songId || props.initialScore?.id || 0,
-          level: props.difficulty || props.initialScore?.level || 0,
-          score: form.value.score,
-          scoreRank: props.initialScore?.scoreRank || 0,
-          great: form.value.great,
-          good: form.value.good,
-          bad: form.value.bad,
-          drumroll: form.value.drumroll,
-          combo: form.value.combo,
-          playCount: props.initialScore?.playCount || 0,
-          clearCount: props.initialScore?.clearCount || 0,
-          fullcomboCount: props.initialScore?.fullcomboCount || 0,
-          perfectCount: props.initialScore?.perfectCount || 0,
-          updatedAt: new Date().toISOString()
-        }
-        
-        lockedData[key] = scoreToLock
-        localStorage.setItem('taiko-locked-songs', JSON.stringify(lockedData))
-      } catch (e) {
-        console.error('Failed to update locked score', e)
-      }
-    }
+    const id = props.songId || props.initialScore?.id || 0
+    const level = props.difficulty || props.initialScore?.level || 0
+    updateLockedScore(id, level, form.value)
   }
   emit('save', { ...form.value })
 }

@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import type { SongStats, SongsDatabase } from '@/types'
+import type { SongStats, SongsDatabase, UserScore, LockedScores } from '@/types'
 import { loadSongsData } from '@data/songs'
 import {
   calcMaxRatings,
@@ -22,6 +22,7 @@ const lastSongStats = ref<SongStats[]>([])
 const filteredSongStats = ref<SongStats[]>([])
 const onlyCnSongs = ref(false)
 const blacklistedSongs = ref<string[]>([])
+const lockedScores = ref<LockedScores>({})
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 
@@ -191,6 +192,16 @@ export function useScoreStore() {
         }
       }
 
+      const savedLocked = localStorage.getItem('taiko-locked-songs')
+      if (savedLocked) {
+        try {
+          lockedScores.value = JSON.parse(savedLocked)
+        } catch (e) {
+          console.error('Failed to parse locked scores', e)
+          lockedScores.value = {}
+        }
+      }
+
       // Load DB if needed
       if (!songsDB.value) {
         songsDB.value = await loadSongsData()
@@ -283,6 +294,43 @@ export function useScoreStore() {
     localStorage.setItem('taiko-blacklisted-songs', JSON.stringify(blacklistedSongs.value))
   }
 
+  const toggleLock = (id: number, level: number, scoreData?: Partial<UserScore>) => {
+    const key = `${id}-${level}`
+    if (lockedScores.value[key]) {
+      delete lockedScores.value[key]
+    } else if (scoreData) {
+      lockedScores.value[key] = {
+        id,
+        level,
+        score: scoreData.score || 0,
+        scoreRank: scoreData.scoreRank || 0,
+        great: scoreData.great || 0,
+        good: scoreData.good || 0,
+        bad: scoreData.bad || 0,
+        drumroll: scoreData.drumroll || 0,
+        combo: scoreData.combo || 0,
+        playCount: scoreData.playCount || 0,
+        clearCount: scoreData.clearCount || 0,
+        fullcomboCount: scoreData.fullcomboCount || 0,
+        perfectCount: scoreData.perfectCount || 0,
+        updatedAt: new Date().toISOString()
+      }
+    }
+    localStorage.setItem('taiko-locked-songs', JSON.stringify(lockedScores.value))
+  }
+
+  const updateLockedScore = (id: number, level: number, scoreData: Partial<UserScore>) => {
+    const key = `${id}-${level}`
+    if (lockedScores.value[key]) {
+      lockedScores.value[key] = {
+        ...lockedScores.value[key],
+        ...scoreData,
+        updatedAt: new Date().toISOString()
+      }
+      localStorage.setItem('taiko-locked-songs', JSON.stringify(lockedScores.value))
+    }
+  }
+
   return {
     songsDB,
     allSongStats,
@@ -290,6 +338,7 @@ export function useScoreStore() {
     lastSongStats,
     onlyCnSongs,
     blacklistedSongs,
+    lockedScores,
     isLoading,
     error,
     overallRating,
@@ -298,6 +347,8 @@ export function useScoreStore() {
     topLists,
     init,
     setCnFilter,
-    toggleBlacklist
+    toggleBlacklist,
+    toggleLock,
+    updateLockedScore
   }
 }
