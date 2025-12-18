@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SongLevelData, SongStats, UserScore, LockedScores } from '@/types'
+import type { SongLevelData, SongStats, UserScore } from '@/types'
 import { calculateSongStats } from '@utils/calculator'
 import { computed, ref, watch } from 'vue'
  import { useScoreStore } from '@/store/scoreStore'
