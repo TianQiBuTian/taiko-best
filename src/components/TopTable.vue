@@ -5,18 +5,18 @@ import RatingProgressCell from '@components/RatingProgressCell.vue'
 import { MAX_CONSTANT_VALUE } from '@utils/calculator'
 import { difficultyMap } from '@utils/difficulty'
 import { recommendSongs } from '@utils/recommend'
-import { nextTick, ref, watch } from 'vue'
+import { nextTick, ref, watch, computed } from 'vue'
 import { useScoreStore } from '@/store/scoreStore'
 
 interface Props {
   title: string
   data: SongStats[]
   valueKey: keyof SongStats
-  showMode?: 'top20' | 'recommend'
+  showMode?: 'top' | 'recommend'
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  showMode: 'top20'
+  showMode: 'top'
 })
 
 const store = useScoreStore()
@@ -26,6 +26,57 @@ const isLoading = ref(false)
 const difficultyAdjustment = ref<number>(0)
 const best20ConstantBase = ref<number>(0)
 const showGuide = ref(false)
+
+// 分页逻辑
+const currentPage = ref(1)
+const pageSize = 20
+
+const totalPages = computed(() => Math.ceil(props.data.length / pageSize))
+
+const paginatedData = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  const end = start + pageSize
+  return props.data.slice(start, end)
+})
+
+const visiblePages = computed(() => {
+  const pages: (number | string)[] = []
+  const delta = 2
+  const left = currentPage.value - delta
+  const right = currentPage.value + delta + 1
+  
+  for (let i = 1; i <= totalPages.value; i++) {
+    if (i === 1 || i === totalPages.value || (i >= left && i < right)) {
+      pages.push(i)
+    } else if (pages[pages.length - 1] !== '...') {
+      pages.push('...')
+    }
+  }
+  return pages
+})
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
+}
+
+function prevPage() {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+
+function goToPage(page: number) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
+
+// 监听数据变化，重置页码
+watch([() => props.data, () => props.valueKey], () => {
+  currentPage.value = 1
+})
 
 const formatValue = (item: SongStats, key: keyof SongStats): string => {
   const value = item[key]
@@ -185,43 +236,84 @@ watch(
       <h2 class="m-0 font-bold text-[#1D1D1F] text-3xl tracking-tight">{{ title }}</h2>
     </div>
     
-    <!-- Top 20 表格 -->
-    <div v-if="showMode === 'top20'" class="bg-white/50 shadow-sm backdrop-blur-sm border border-black/5 rounded-[24px] overflow-x-auto">
-      <table class="w-full text-sm border-collapse">
-        <thead>
-          <tr>
-            <th class="bg-black/5 p-4 font-bold text-[#1D1D1F] text-left">排名</th>
-            <th class="bg-black/5 p-4 font-bold text-[#1D1D1F] text-left">曲名</th>
-            <th class="bg-black/5 p-4 font-bold text-[#1D1D1F] text-left">良</th>
-            <th class="bg-black/5 p-4 font-bold text-[#1D1D1F] text-left">可</th>
-            <th class="bg-black/5 p-4 font-bold text-[#1D1D1F] text-left">不可</th>
-            <th class="bg-black/5 p-4 font-bold text-[#1D1D1F] text-left">定数</th>
-            <th class="bg-black/5 p-4 font-bold text-[#1D1D1F] text-left">Rating</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(item, index) in data" :key="index" class="hover:bg-black/[0.02] transition-colors">
-            <td class="p-4 border-black/5 border-b text-left">{{ index + 1 }}</td>
-            <td class="p-4 border-black/5 border-b text-left">
-              <span class="font-semibold text-[#1D1D1F]">{{ item.title }}</span>
-              <span v-if="item._isNew" class="bg-[#FF3B30] ml-2 px-1.5 py-0.5 rounded-full font-bold text-[10px] text-white">NEW</span>
-            </td>
-            <td class="p-4 border-black/5 border-b text-left">{{ item.great }}</td>
-            <td class="p-4 border-black/5 border-b text-left">{{ item.good }}</td>
-            <td class="p-4 border-black/5 border-b text-left">{{ item.bad }}</td>
-            <td class="p-4 border-black/5 border-b font-mono text-left">{{ item._constant ?? '-' }}</td>
-            <td class="p-4 border-black/5 border-b text-left">
-              <template v-if="item._maxRatings">
-                <RatingProgressCell :song="item" :valueKey="valueKey" :formatValue="formatValue" />
-                <div v-if="item._ratingDiff && item._ratingDiff !== 0" class="mt-1 font-semibold text-[11px]" :class="item._ratingDiff > 0 ? 'text-[#FF3B30]' : 'text-[#007AFF]'">
-                    {{ item._ratingDiff > 0 ? '+' : '' }}{{ item._ratingDiff.toFixed(2) }}
-                </div>
-              </template>
-              <div v-else class="text-[#8E8E93] text-xs">-</div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Top 表格 -->
+    <div v-if="showMode === 'top'" class="bg-white/50 shadow-sm backdrop-blur-sm border border-black/5 rounded-[24px] overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr>
+              <th class="bg-black/5 p-4 font-bold text-[#1D1D1F] text-left">排名</th>
+              <th class="bg-black/5 p-4 font-bold text-[#1D1D1F] text-left">曲名</th>
+              <th class="bg-black/5 p-4 font-bold text-[#1D1D1F] text-left">良</th>
+              <th class="bg-black/5 p-4 font-bold text-[#1D1D1F] text-left">可</th>
+              <th class="bg-black/5 p-4 font-bold text-[#1D1D1F] text-left">不可</th>
+              <th class="bg-black/5 p-4 font-bold text-[#1D1D1F] text-left">定数</th>
+              <th class="bg-black/5 p-4 font-bold text-[#1D1D1F] text-left">Rating</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, index) in paginatedData" :key="index" class="hover:bg-black/[0.02] transition-colors">
+              <td class="p-4 border-black/5 border-b text-left">{{ (currentPage - 1) * pageSize + index + 1 }}</td>
+              <td class="p-4 border-black/5 border-b text-left">
+                <span class="font-semibold text-[#1D1D1F]">{{ item.title }}</span>
+                <span v-if="item._isNew" class="bg-[#FF3B30] ml-2 px-1.5 py-0.5 rounded-full font-bold text-[10px] text-white">NEW</span>
+              </td>
+              <td class="p-4 border-black/5 border-b text-left">{{ item.great }}</td>
+              <td class="p-4 border-black/5 border-b text-left">{{ item.good }}</td>
+              <td class="p-4 border-black/5 border-b text-left">{{ item.bad }}</td>
+              <td class="p-4 border-black/5 border-b font-mono text-left">{{ item._constant ?? '-' }}</td>
+              <td class="p-4 border-black/5 border-b text-left">
+                <template v-if="item._maxRatings">
+                  <RatingProgressCell :song="item" :valueKey="valueKey" :formatValue="formatValue" />
+                  <div v-if="item._ratingDiff && item._ratingDiff !== 0" class="mt-1 font-semibold text-[11px]" :class="item._ratingDiff > 0 ? 'text-[#FF3B30]' : 'text-[#007AFF]'">
+                      {{ item._ratingDiff > 0 ? '+' : '' }}{{ item._ratingDiff.toFixed(2) }}
+                  </div>
+                </template>
+                <div v-else class="text-[#8E8E93] text-xs">-</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 分页控制 -->
+      <div v-if="totalPages > 1" class="flex flex-wrap justify-center items-center gap-2 bg-black/5 p-6 no-capture">
+        <button 
+          @click="prevPage" 
+          :disabled="currentPage === 1"
+          class="flex justify-center items-center bg-white/50 hover:bg-white/80 disabled:opacity-30 backdrop-blur-sm border border-black/5 rounded-full w-10 h-10 transition-all cursor-pointer disabled:cursor-not-allowed"
+        >
+          <i class="fa-chevron-left fas"></i>
+        </button>
+        
+        <div class="flex items-center gap-1">
+          <template v-for="(p, index) in visiblePages" :key="index">
+            <span v-if="p === '...'" class="px-2 text-[#8E8E93]">...</span>
+            <button 
+              v-else
+              @click="goToPage(p as number)"
+              :class="[
+                'w-10 h-10 rounded-full font-semibold text-sm transition-all cursor-pointer flex items-center justify-center',
+                currentPage === p ? 'bg-[#007AFF] text-white shadow-lg shadow-[#007AFF]/20' : 'bg-white/50 hover:bg-white/80 text-[#1D1D1F] border border-black/5'
+              ]"
+            >
+              {{ p }}
+            </button>
+          </template>
+        </div>
+
+        <button 
+          @click="nextPage" 
+          :disabled="currentPage === totalPages"
+          class="flex justify-center items-center bg-white/50 hover:bg-white/80 disabled:opacity-30 backdrop-blur-sm border border-black/5 rounded-full w-10 h-10 transition-all cursor-pointer disabled:cursor-not-allowed"
+        >
+          <i class="fa-chevron-right fas"></i>
+        </button>
+
+        <div class="ml-4 text-[#8E8E93] text-sm">
+          第 {{ currentPage }} / {{ totalPages }} 页 (共 {{ data.length }} 条)
+        </div>
+      </div>
     </div>
     
     <!-- 推荐歌曲列表 -->

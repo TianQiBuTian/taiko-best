@@ -29,7 +29,7 @@ const contentRef = ref<HTMLElement | null>(null)
 const isSaving = ref(false)
 
 const activeSection = ref('overview')
-const activeSubTab = ref<'top20' | 'recommend'>('top20')
+const activeSubTab = ref<'top' | 'recommend'>('top')
 
 const menuItems = [
     { id: 'overview', label: '概览' },
@@ -149,10 +149,10 @@ async function saveElementAsImage(element: HTMLElement | null, fileName: string)
                         <div class="inline-flex bg-black/5 mb-8 p-1 rounded-full">
                             <button 
                                 class="px-6 py-2 rounded-full font-semibold text-sm transition-all duration-200"
-                                :class="activeSubTab === 'top20' ? 'bg-white text-[#1D1D1F] shadow-sm' : 'text-[#8E8E93] hover:text-[#1D1D1F]'"
-                                @click="activeSubTab = 'top20'"
+                                :class="activeSubTab === 'top' ? 'bg-white text-[#1D1D1F] shadow-sm' : 'text-[#8E8E93] hover:text-[#1D1D1F]'"
+                                @click="activeSubTab = 'top'"
                             >
-                                Top 20
+                                Top
                             </button>
                             <button 
                                 class="px-6 py-2 rounded-full font-semibold text-sm transition-all duration-200"

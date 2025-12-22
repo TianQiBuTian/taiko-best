@@ -45,13 +45,13 @@ const topLists = computed(() => {
   const args = [filtered, songsDB.value, ratingAlgorithm.value, lastSongStats.value] as const
 
   return {
-    rating: enhanceSongStats([...filtered].sort((a, b) => b.rating - a.rating).slice(0, 20), ...args),
-    daigouryoku: enhanceSongStats([...filtered].sort((a, b) => b.daigouryoku - a.daigouryoku).slice(0, 20), ...args),
-    stamina: enhanceSongStats([...filtered].sort((a, b) => b.stamina - a.stamina).slice(0, 20), ...args),
-    speed: enhanceSongStats([...filtered].sort((a, b) => b.speed - a.speed).slice(0, 20), ...args),
-    accuracy_power: enhanceSongStats([...filtered].sort((a, b) => b.accuracy_power - a.accuracy_power).slice(0, 20), ...args),
-    rhythm: enhanceSongStats([...filtered].sort((a, b) => b.rhythm - a.rhythm).slice(0, 20), ...args),
-    complex: enhanceSongStats([...filtered].sort((a, b) => b.complex - a.complex).slice(0, 20), ...args)
+    rating: enhanceSongStats([...filtered].sort((a, b) => b.rating - a.rating), ...args),
+    daigouryoku: enhanceSongStats([...filtered].sort((a, b) => b.daigouryoku - a.daigouryoku), ...args),
+    stamina: enhanceSongStats([...filtered].sort((a, b) => b.stamina - a.stamina), ...args),
+    speed: enhanceSongStats([...filtered].sort((a, b) => b.speed - a.speed), ...args),
+    accuracy_power: enhanceSongStats([...filtered].sort((a, b) => b.accuracy_power - a.accuracy_power), ...args),
+    rhythm: enhanceSongStats([...filtered].sort((a, b) => b.rhythm - a.rhythm), ...args),
+    complex: enhanceSongStats([...filtered].sort((a, b) => b.complex - a.complex), ...args)
   }
 })
 
