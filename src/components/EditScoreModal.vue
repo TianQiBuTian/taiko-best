@@ -99,7 +99,7 @@ const previewStats = computed<SongStats | null>(() => {
     updatedAt: ''
   }
   
-  return calculateSongStats(props.songData, tempScore)
+  return calculateSongStats(props.songData, tempScore, store.ratingAlgorithm.value)
 })
 
 watch(() => props.show, (newVal) => {

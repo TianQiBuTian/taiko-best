@@ -141,7 +141,7 @@ const handleSaveScore = (scoreData: Partial<UserScore>) => {
   if (songsDB.value) {
      const result = findSongByIdLevel(songsDB.value, id, level as 4 | 5)
      if (result) {
-        const stats = calculateSongStats(result.levelData, newScore, result.song.title)
+        const stats = calculateSongStats(result.levelData, newScore, result.song.title, store.ratingAlgorithm.value)
         if (stats) {
            song.stats = stats
         }
